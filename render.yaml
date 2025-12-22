@@ -22,12 +22,17 @@ services:
       - key: WEATHERSTACK_API_KEY
         sync: false
 
-staticSites:
+
   # Frontend Static Site
-  - name: smart-city-frontend
+  - type: web
+    name: smart-city-frontend
+    env: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        fromService:
+          type: web
+          name: smart-city-backend
+          property: url
