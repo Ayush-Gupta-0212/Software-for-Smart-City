@@ -30,7 +30,4 @@ staticSites:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: smart-city-backend
-          property: url
+        sync: false
