@@ -16,10 +16,10 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const result = await login(
-            email,
+            email.toLowerCase().trim(),
             password,
-            loginRole === 'admin' ? adminSecretKey : null,
-            loginRole === 'attraction_manager' ? managerSecretKey : null
+            loginRole === 'admin' ? adminSecretKey.trim() : null,
+            loginRole === 'attraction_manager' ? managerSecretKey.trim() : null
         );
         if (result.success) {
             navigate('/dashboard');
