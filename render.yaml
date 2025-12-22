@@ -35,9 +35,4 @@ services:
           type: web
           name: smart-city-backend
           property: url
-          envVarKey: VITE_API_URL # Optional: Map if needed by Render's internal logic, but usually accessing via service discovery var is different.
-          # Actually, for static sites, we need to set this at build time.
-          # Render allows linking services.
-          # Better approach for static site needing backend URL:
-          # We can uses 'fromService' to automatically get the URL of the backend service.
-          # However, VITE_API_URL must be available during build time.
+

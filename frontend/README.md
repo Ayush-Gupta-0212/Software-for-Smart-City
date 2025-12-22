@@ -1,16 +1,50 @@
-# React + Vite
+# Smart City - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive web interface for the Smart City Management System. Built with React, Vite, and Tailwind CSS, featuring glassmorphism design and interactive particle backgrounds.
 
-Currently, two official plugins are available:
+## 🚀 Technologies
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+-   **Framework:** [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+-   **Styling:** [Tailwind CSS](https://tailwindcss.com/) + Custom CSS Variables
+-   **Animations:** [Framer Motion](https://www.framer.com/motion/)
+-   **Maps:** Mapbox GL & React Google Maps
+-   **Particles:** tsparticles (Slim)
+-   **Routing:** React Router DOM
 
-## React Compiler
+## 🛠️ Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1.  **Navigate to the frontend directory:**
+    ```bash
+    cd frontend
+    ```
 
-## Expanding the ESLint configuration
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3.  **Start the development server:**
+    ```bash
+    npm run dev
+    ```
+
+## ✨ Key Features
+
+-   **Dynamic Authentication UI**: Login/Register pages with glassmorphism cards and interactive particle backgrounds.
+-   **Role-Based Access**: Toggle login for Citizens, Attraction Managers, and Admins.
+-   **Dashboard**: Centralized hub for accessing services.
+-   **Services Integration**: Interfaces for Traffic, Weather, Bills, identifying attractions, and more.
+-   **Theme Support**: Built-in Dark/Light mode toggle.
+
+## 📂 Structure
+
+-   `src/components`: Reusable UI components (Navbar, ParticlesBackground, AuthLayout).
+-   `src/pages`: Individual route pages (Login, Dashboard, etc.).
+-   `src/context`: React Context providers (AuthContext, ThemeContext).
+-   `src/index.css`: Global styles and Tailwind directives.
+
+## 🔧 Scripts
+
+-   `npm run dev`: Start local dev server.
+-   `npm run build`: Build for production.
+-   `npm run lint`: Run ESLint.
