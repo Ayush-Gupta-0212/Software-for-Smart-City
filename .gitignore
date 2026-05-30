@@ -29,3 +29,17 @@ coverage/
 
 # Security Audit Reports
 Security Audit Report.txt
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
