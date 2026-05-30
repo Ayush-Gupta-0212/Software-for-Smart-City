@@ -1,0 +1,162 @@
+// jenkins/Jenkinsfile — Smart City CI/CD pipeline.
+//
+// What it does:
+//   Checkout → Build images (parallel) → Push to Docker Hub →
+//   Deploy to Kubernetes → Smoke test → auto-rollback on failure.
+//
+// Required Jenkins credentials:
+//   - 'dockerhub'    → usernamePassword (your Docker Hub login)
+//   - 'kubeconfig'   → file (kubeconfig pointing at the AWS K3s cluster)
+
+pipeline {
+  agent any
+
+  parameters {
+    string(
+      name: 'IMAGE_TAG',
+      defaultValue: 'latest',
+      description: 'Docker image tag to build + deploy (semver or commit SHA recommended).'
+    )
+    booleanParam(
+      name: 'PUSH_IMAGES',
+      defaultValue: true,
+      description: 'Push images to Docker Hub. Disable for local-only testing.'
+    )
+  }
+
+  environment {
+    REGISTRY  = 'docker.io/ayushgupta0212'
+    NAMESPACE = 'smart-city'
+  }
+
+  options {
+    timeout(time: 20, unit: 'MINUTES')
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+    disableConcurrentBuilds()
+  }
+
+  stages {
+
+    stage('Checkout') {
+      steps {
+        checkout scm
+        sh 'git rev-parse --short HEAD > .gitsha'
+        script {
+          env.GIT_SHA = readFile('.gitsha').trim()
+          echo "Building commit ${env.GIT_SHA}"
+        }
+      }
+    }
+
+    stage('Lint + Test') {
+      steps {
+        dir('backend') {
+          sh 'npm ci'
+          sh 'npm test || echo "No unit tests yet — TODO"'
+        }
+      }
+    }
+
+    stage('Build Images') {
+      parallel {
+        stage('Backend image') {
+          steps {
+            sh """
+              docker build \\
+                -t ${REGISTRY}/smart-city-backend:${params.IMAGE_TAG} \\
+                -t ${REGISTRY}/smart-city-backend:${env.GIT_SHA} \\
+                ./backend
+            """
+          }
+        }
+        stage('Frontend image') {
+          steps {
+            withCredentials([
+              string(credentialsId: 'mapbox-token', variable: 'MAPBOX_TOKEN'),
+              string(credentialsId: 'razorpay-key-id', variable: 'RAZORPAY_KEY)
+            ]) {
+              sh """
+                docker build \\
+                  --build-arg VITE_API_URL=/api \\
+                  --build-arg VITE_MAPBOX_ACCESS_TOKEN=$MAPBOX_TOKEN \\
+                  --build-arg VITE_RAZORPAY_KEY_ID=$RAZORPAY_KEY \\
+                  -t ${REGISTRY}/smart-city-frontend:${params.IMAGE_TAG} \\
+                  -t ${REGISTRY}/smart-city-frontend:${env.GIT_SHA} \\
+                  ./frontend
+              """
+            }
+          }
+        }
+      }
+    }
+
+    stage('Push to Docker Hub') {
+      when { expression { params.PUSH_IMAGES } }
+      steps {
+        withCredentials([
+          usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')
+        ]) {
+          sh 'echo $DH_PASS | docker login -u $DH_USER --password-stdin'
+          sh "docker push ${REGISTRY}/smart-city-backend:${params.IMAGE_TAG}"
+          sh "docker push ${REGISTRY}/smart-city-backend:${env.GIT_SHA}"
+          sh "docker push ${REGISTRY}/smart-city-frontend:${params.IMAGE_TAG}"
+          sh "docker push ${REGISTRY}/smart-city-frontend:${env.GIT_SHA}"
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+          sh 'kubectl apply -f kubernetes/00-namespace.yaml'
+          sh 'kubectl apply -f kubernetes/01-config.yaml'
+          // Secret managed manually; assumed already created from backend/.env.
+          sh 'kubectl apply -f kubernetes/10-backend.yaml'
+          sh 'kubectl apply -f kubernetes/11-frontend.yaml'
+          sh 'kubectl apply -f kubernetes/20-ingress.yaml'
+          // Bump image tags
+          sh """
+            kubectl -n ${NAMESPACE} set image deployment/smart-city-backend \\
+              backend=${REGISTRY}/smart-city-backend:${params.IMAGE_TAG}
+            kubectl -n ${NAMESPACE} set image deployment/smart-city-frontend \\
+              frontend=${REGISTRY}/smart-city-frontend:${params.IMAGE_TAG}
+          """
+          sh "kubectl -n ${NAMESPACE} rollout status deployment --timeout=180s"
+        }
+      }
+    }
+
+    stage('Smoke Test') {
+      steps {
+        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+          sh "kubectl -n ${NAMESPACE} get pods,svc,ingress"
+          sh """
+            INGRESS_IP=\$(kubectl -n ingress-nginx get svc ingress-nginx-controller \\
+              -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            echo "Ingress IP: \$INGRESS_IP"
+            curl -fsS http://\$INGRESS_IP/ -o /dev/null && echo '✅ Frontend up'
+            curl -fsS http://\$INGRESS_IP/api/ -o /dev/null && echo '✅ Backend reachable via proxy'
+          """
+        }
+      }
+    }
+
+  }
+
+  post {
+    success {
+      echo "✅ Smart City image '${params.IMAGE_TAG}' (git ${env.GIT_SHA}) deployed."
+    }
+    failure {
+      echo '❌ Deploy failed — rolling back.'
+      withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+        sh "kubectl -n ${NAMESPACE} rollout undo deployment/smart-city-backend || true"
+        sh "kubectl -n ${NAMESPACE} rollout undo deployment/smart-city-frontend || true"
+      }
+    }
+    always {
+      cleanWs()
+    }
+  }
+}

@@ -1,0 +1,78 @@
+# docker-compose.yml — Smart City local dev / verification orchestration.
+# One command spins up backend + frontend on a shared bridge network:
+#   docker compose up --build -d
+#
+# After it's up:
+#   open http://localhost:8080   (frontend, proxies /api/* to backend)
+#   open http://localhost:5000   (backend directly — sanity)
+
+name: smart-city
+
+services:
+  # ─────────────────────────────────────────────
+  # BACKEND — Node + Express
+  # ─────────────────────────────────────────────
+  smart-city-backend:
+    build:
+      context: ./backend
+    image: smart-city/backend:dev
+    container_name: smart-city-backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      # Override MONGO_URI from .env so the container reaches Windows host's MongoDB.
+      # (set by root .env -> compose variable substitution)
+      MONGO_URI: ${MONGO_URI}
+      ALLOWED_ORIGINS: http://localhost:8080
+      NODE_ENV: production
+    extra_hosts:
+      # Make host.docker.internal resolvable on Linux (already works on Windows/Mac).
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5000:5000"
+    networks:
+      - smart-city
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://localhost:5000/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # ─────────────────────────────────────────────
+  # FRONTEND — Vite build → Nginx, reverse-proxies /api/* to backend
+  # ─────────────────────────────────────────────
+  smart-city-frontend:
+    build:
+      context: ./frontend
+      args:
+        # Same-origin: nginx in this container proxies /api/* to backend
+        VITE_API_URL: /api
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
+        VITE_MAPBOX_ACCESS_TOKEN: ${VITE_MAPBOX_ACCESS_TOKEN:-}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+    image: smart-city/frontend:dev
+    container_name: smart-city-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      smart-city-backend:
+        condition: service_healthy
+    networks:
+      - smart-city
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+networks:
+  smart-city:
+    driver: bridge
+    name: smart-city-net

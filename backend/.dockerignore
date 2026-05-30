@@ -1,0 +1,17 @@
+node_modules
+.env
+.env.*
+.git
+.gitignore
+.vscode
+.idea
+*.log
+README.md
+Dockerfile
+.dockerignore
+# Test/scratch scripts — never ship to production
+test-*.js
+test_*.js
+seeder.js
+validate-key.js
+verify_output*

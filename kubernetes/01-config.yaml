@@ -1,0 +1,11 @@
+# Non-sensitive runtime config. Secrets live in a separate kubectl-created Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smart-city-config
+  namespace: smart-city
+data:
+  NODE_ENV: "production"
+  PORT: "5000"
+  # Set this to the public Ingress URL once you know it. Comma-separated for multiple.
+  ALLOWED_ORIGINS: ""

@@ -1,0 +1,28 @@
+# Single entry point. Routes /api/* → backend, everything else → frontend SPA.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smart-city-ingress
+  namespace: smart-city
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "5m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: smart-city-backend
+                port:
+                  number: 5000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: smart-city-frontend
+                port:
+                  number: 80
