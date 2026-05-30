@@ -22,6 +22,16 @@ services:
         sync: false
       - key: WEATHERSTACK_API_KEY
         sync: false
+      - key: ADMIN_SECRET_KEY
+        sync: false
+      - key: MANAGER_SECRET_KEY
+        sync: false
+      - key: TICKETMASTER_CONSUMER_KEY
+        sync: false
+      - key: TICKETMASTER_CONSUMER_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
 
 
   # Frontend Static Site
@@ -33,4 +43,8 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
+        sync: false
+      - key: VITE_RAZORPAY_KEY_ID
+        sync: false
+      - key: VITE_MAPBOX_ACCESS_TOKEN
         sync: false

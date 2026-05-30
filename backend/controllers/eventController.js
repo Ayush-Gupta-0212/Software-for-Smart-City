@@ -1,4 +1,5 @@
 const Event = require('../models/Event');
+const { fetchTicketmasterEvents } = require('../utils/ticketmaster');
 
 // @desc    Get all upcoming events
 // @route   GET /api/events
@@ -9,14 +10,24 @@ const getEvents = async (req, res) => {
         currentDate.setHours(0, 0, 0, 0); // Set to start of day to include all events for today
         console.log('=== GET EVENTS REQUEST ===');
         console.log('Current date (start of day):', currentDate);
-        console.log('Query: { date: { $gte:', currentDate, '} }');
 
-        const events = await Event.find({ date: { $gte: currentDate } }).sort({ date: 1 });
-        console.log('Found', events.length, 'events');
-        console.log('Events:', events.map(e => ({ id: e._id, title: e.title, date: e.date })));
+        // 1. Fetch Local Events
+        const localEventsPromise = Event.find({ date: { $gte: currentDate } }).sort({ date: 1 });
+
+        // 2. Fetch Ticketmaster Events (Async)
+        // Filtering by Jalandhar as requested. If no events found in Jalandhar, it will return empty list from TM.
+        const tmEventsPromise = fetchTicketmasterEvents('', 'Jalandhar');
+
+        const [localEvents, tmEvents] = await Promise.all([localEventsPromise, tmEventsPromise]);
+
+        console.log(`Found ${localEvents.length} local events and ${tmEvents.length} Ticketmaster events`);
+
+        // 3. Merge and Sort
+        const allEvents = [...localEvents, ...tmEvents].sort((a, b) => new Date(a.date) - new Date(b.date));
+
         console.log('=== GET EVENTS SUCCESS ===');
 
-        res.json(events);
+        res.json(allEvents);
     } catch (error) {
         console.error('Error fetching events:', error);
         res.status(500).json({ message: 'Failed to fetch events', error: error.message });

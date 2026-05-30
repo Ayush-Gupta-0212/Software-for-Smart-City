@@ -9,7 +9,14 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+// CORS: in production set ALLOWED_ORIGINS=https://your-frontend.onrender.com,https://other-domain
+// (comma-separated). If unset (local dev) any origin is allowed.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+    origin: allowedOrigins.length === 0 ? true : allowedOrigins,
+    credentials: true,
+}));
 app.use(express.json());
 
 const authRoutes = require('./routes/authRoutes');

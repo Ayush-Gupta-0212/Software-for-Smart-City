@@ -43,7 +43,7 @@ const AttractionCard = ({ place, index, canManage, openEditModal, handleDelete }
                         </div>
 
                         {/* Admin Actions Overlay */}
-                        {canManage && (
+                        {canManage && place.source !== 'ticketmaster' && (
                             <div className="absolute top-4 left-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <button
                                     onClick={(e) => {

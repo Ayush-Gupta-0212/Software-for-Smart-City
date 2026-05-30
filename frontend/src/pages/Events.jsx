@@ -206,48 +206,62 @@ const Events = () => {
                             </div>
 
                             <div className="flex space-x-2">
-                                {user && !canManage && (
-                                    event.attendees?.some(attendeeId => attendeeId === user._id) ? (
-                                        <button
-                                            onClick={() => handleUnregister(event._id)}
-                                            className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold py-2 rounded-lg transition-all"
-                                        >
-                                            Unregister
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleRegister(event)}
-                                            disabled={isProcessingPayment || (event.maxAttendees && event.attendees?.length >= event.maxAttendees)}
-                                            className={`flex-1 ${event.maxAttendees && event.attendees?.length >= event.maxAttendees
-                                                ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                                                : event.isPaid
-                                                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
-                                                    : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700'
-                                                } text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2`}
-                                        >
-                                            {isProcessingPayment ? (
-                                                'Processing...'
-                                            ) : event.maxAttendees && event.attendees?.length >= event.maxAttendees ? (
-                                                'Event Full'
-                                            ) : event.isPaid ? (
-                                                <>
-                                                    <FaRupeeSign /> Buy Ticket
-                                                </>
-                                            ) : (
-                                                'Register Now'
-                                            )}
-                                        </button>
-                                    )
-                                )}
-                                {!user && (
-                                    <button
-                                        disabled
-                                        className="flex-1 bg-gray-500 text-gray-200 font-bold py-2 rounded-lg cursor-not-allowed"
+                                {event.source === 'ticketmaster' ? (
+                                    <a
+                                        href={event.externalLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2"
                                     >
-                                        Login to Register
-                                    </button>
+                                        <FaTicketAlt /> View on Ticketmaster
+                                    </a>
+                                ) : (
+                                    <>
+                                        {user && !canManage && (
+                                            event.attendees?.some(attendeeId => attendeeId === user._id) ? (
+                                                <button
+                                                    onClick={() => handleUnregister(event._id)}
+                                                    className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-bold py-2 rounded-lg transition-all"
+                                                >
+                                                    Unregister
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleRegister(event)}
+                                                    disabled={isProcessingPayment || (event.maxAttendees && event.attendees?.length >= event.maxAttendees)}
+                                                    className={`flex-1 ${event.maxAttendees && event.attendees?.length >= event.maxAttendees
+                                                        ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                                                        : event.isPaid
+                                                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
+                                                            : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700'
+                                                        } text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2`}
+                                                >
+                                                    {isProcessingPayment ? (
+                                                        'Processing...'
+                                                    ) : event.maxAttendees && event.attendees?.length >= event.maxAttendees ? (
+                                                        'Event Full'
+                                                    ) : event.isPaid ? (
+                                                        <>
+                                                            <FaRupeeSign /> Buy Ticket
+                                                        </>
+                                                    ) : (
+                                                        'Register Now'
+                                                    )}
+                                                </button>
+                                            )
+                                        )}
+                                        {!user && (
+                                            <button
+                                                disabled
+                                                className="flex-1 bg-gray-500 text-gray-200 font-bold py-2 rounded-lg cursor-not-allowed"
+                                            >
+                                                Login to Register
+                                            </button>
+                                        )}
+                                    </>
                                 )}
-                                {canManage && (
+
+                                {canManage && event.source !== 'ticketmaster' && (
                                     <>
                                         <button
                                             onClick={() => openEditModal(event)}

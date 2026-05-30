@@ -1,11 +1,27 @@
 const Attraction = require('../models/Attraction');
+const { fetchTicketmasterVenues } = require('../utils/ticketmaster');
 
 // @desc    Get all attractions
 // @route   GET /api/attractions
 // @access  Public
 const getAttractions = async (req, res) => {
-    const attractions = await Attraction.find({});
-    res.json(attractions);
+    try {
+        // 1. Fetch Local Attractions
+        const localAttractionsPromise = Attraction.find({});
+
+        // 2. Fetch Ticketmaster Venues
+        const tmVenuesPromise = fetchTicketmasterVenues('', 'Jalandhar');
+
+        const [localAttractions, tmVenues] = await Promise.all([localAttractionsPromise, tmVenuesPromise]);
+
+        // 3. Merge
+        const allAttractions = [...localAttractions, ...tmVenues];
+
+        res.json(allAttractions);
+    } catch (error) {
+        console.error('Error fetching attractions:', error);
+        res.status(500).json({ message: 'Failed to fetch attractions', error: error.message });
+    }
 };
 
 // @desc    Create an attraction
